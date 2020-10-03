@@ -3,7 +3,7 @@ var earthquakes_URL = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary
 //console.log(earthquakes_URL) --> we are able to view the json object
 
 var plates_URL = "https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_boundaries.json"
-//console.log(plates_URL) --> we are able to view the jsob object
+//console.log(plates_URL) --> we are able to view the json object
 
 // Initialize all the layergroups we need - which are earthquakes and tectonic plates
 var earthquakes = new L.LayerGroup()
@@ -20,14 +20,14 @@ var satelliteMap = L.tileLayer("https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}
 var grayscaleMap = L.tileLayer("https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}", {
     attribution: "Map data &copy; <a href=\"https://www.openstreetmap.org/\">OpenStreetMap</a> contributors, <a href=\"https://creativecommons.org/licenses/by-sa/2.0/\">CC-BY-SA</a>, Imagery © <a href=\"https://www.mapbox.com/\">Mapbox</a>",
     maxZoom: 18,
-    id: "mapbox.light",
+    id: "mapbox.dark",
     accessToken: API_KEY
 });
 
-var outdoorsMap = L.tileLayer("https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}", {
+var outdoorsMap = L.tileLayer("https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}", {
     attribution: "Map data &copy; <a href=\"https://www.openstreetmap.org/\">OpenStreetMap</a> contributors, <a href=\"https://creativecommons.org/licenses/by-sa/2.0/\">CC-BY-SA</a>, Imagery © <a href=\"https://www.mapbox.com/\">Mapbox</a>",
     maxZoom: 18,
-    id: "mapbox.outdoors",
+    id: "'mapbox/streets-v11",
     accessToken: API_KEY
 });
 
@@ -53,17 +53,54 @@ var myMap = L.map("mapid", {
 
 // Create a layer control where we can choose the basemaps
 // Also add overlay Maps onto the control layer
-L.control.layers(baseMaps, overlayMaps).addTo(myMap);
+L.control.layers(baseMaps, overlayMaps, {
+    collapsed: false
+}).addTo(myMap);
 
 // Retrieve data from the USGS earthquakes GeoJSON data
 d3.json(earthquakes_URL, function(earthquakeData) {
     
     //create a function to make a marker size proportional to the magnitude recorded
     function markerSize(magnitude) {
-        if (magnitude === 0) {
-            return 1;
+        switch (true) {
+            case magnitude > 7:
+                return magnitude * 8;
+            case magnitude > 6:
+                return magnitude * 7;
+            case magnitude > 5:
+                return magnitude * 6;
+            case magnitude > 4:
+                return magnitude * 5;    
+            case magnitude > 3:
+                return magnitude * 4;    
+            case magnitude > 2:
+                return magnitude * 3;
+            case magnitude > 1:
+                return magnitude * 2;                
+            default:
+                return 1;
+    }}
+
+    // Function to Determine Color of Marker Based on the Magnitude of the Earthquake
+    function chooseColor(magnitude) {
+        switch (true) {
+        case magnitude > 7:
+            return "#8B0000";
+        case magnitude > 6:
+            return "#B22222";
+        case magnitude > 5:
+            return "#FF4500";
+        case magnitude > 4:
+            return "#FF8C00";
+        case magnitude > 3:
+            return "#F0E68C";
+        case magnitude > 2:
+            return "#FFFF00";
+        case magnitude > 1:
+            return "#7CFC00";
+        default:
+            return "#00FFFF";
         }
-        return magnitude * 3;
     }
 
     function styleInfo(feature) {
@@ -75,24 +112,6 @@ d3.json(earthquakes_URL, function(earthquakeData) {
             radius: markerSize(feature.properties.mag),
             stroke: true,
             weight: 0.5
-        }
-    }
-
-    // Function to Determine Color of Marker Based on the Magnitude of the Earthquake
-    function chooseColor(magnitude) {
-        switch (true) {
-        case magnitude > 5:
-            return "#581845";
-        case magnitude > 4:
-            return "#900C3F";
-        case magnitude > 3:
-            return "#C70039";
-        case magnitude > 2:
-            return "#FF5733";
-        case magnitude > 1:
-            return "#FFC300";
-        default:
-            return "#DAF7A6";
         }
     }
 
@@ -122,9 +141,9 @@ d3.json(earthquakes_URL, function(earthquakeData) {
     var legend = L.control({ position: "bottomright" });
     legend.onAdd = function() {
         var div = L.DomUtil.create("div", "info legend"), 
-        magnitudeLevels = [0, 1, 2, 3, 4, 5];
+        magnitudeLevels = [1, 2, 3, 4, 5, 6, 7];
 
-        div.innerHTML += "<h3>Magnitude</h3>"
+        div.innerHTML += "<h3>Earthquake Depth</h3>"
 
         for (var i = 0; i < magnitudeLevels.length; i++) {
             div.innerHTML +=
